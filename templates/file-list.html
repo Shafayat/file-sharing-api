@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>File List</title>
+</head>
+<body>
+<nav>
+  <ul class="nav">
+    <li class="nav-item"><a href="/">Home</a></li>
+    <li class="nav-item"><a href="/upload">Upload File</a></li>
+    <li class="nav-item"><a href="/delete">Delete File</a></li>
+  </ul>
+</nav>
+<h1>File List</h1>
+<ul id="fileList">
+</ul>
+<script>
+  window.onload = function() {
+    // Make an AJAX request to the server to fetch the list of files
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/file_list', true);
+    xhr.onload = function() {
+      if (this.status === 200) {
+        // Parse the response as a JSON object
+        var files = JSON.parse(this.response);
+        // Generate the HTML for the file list
+        var fileList = document.getElementById('fileList');
+        files.forEach(function(file) {
+          var listItem = document.createElement('li');
+          var downloadLink = document.createElement('a');
+          downloadLink.href = '/files/' + file;
+          downloadLink.download = file;
+          downloadLink.textContent = file;
+          listItem.appendChild(downloadLink);
+          fileList.appendChild(listItem);
+        });
+      }
+    };
+    xhr.send();
+  };
+</script>
+</body>
+</html>

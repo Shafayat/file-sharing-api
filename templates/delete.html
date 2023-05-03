@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Delete File</title>
+</head>
+<body>
+<nav>
+    <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/upload">Upload File</a></li>
+        <li class="nav-item"><a href="/delete">Delete File</a></li>
+    </ul>
+</nav>
+
+
+<h1>Delete File</h1>
+<form>
+    <label for="privateKey">Private Key:</label>
+    <input type="text" id="privateKey" name="privateKey" required>
+    <br><br>
+    <input type="submit" value="Delete File" onclick="deleteFile(); return false;">
+</form>
+
+<script>
+    function deleteFile() {
+        const privateKey = document.getElementById('privateKey').value;
+        const xhr = new XMLHttpRequest();
+        xhr.open('DELETE', `/files/${privateKey}`);
+        xhr.setRequestHeader('Content-type', 'application/json');
+        xhr.onload = function (data) {
+            console.log(xhr.responseText)
+            console.log(typeof xhr.responseText)
+            let res = {};
+            try {
+                res = JSON.parse(xhr.responseText)
+            } catch (e) {
+                console.log(e);
+            }
+            if (xhr.status === 200) {
+                alert('File deleted successfully!');
+            } else {
+                alert(res.message || 'An error occurred while deleting the file.');
+            }
+        };
+        xhr.send();
+    }
+</script>
+</body>
+</html>
