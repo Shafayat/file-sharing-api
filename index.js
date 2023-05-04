@@ -11,7 +11,7 @@ const upload = multer();
 const fileStorage = new FileStorage(process.env.FOLDER);
 let inactiveSince = Date.now();
 
-// Configurable daily request limits for the network traffic from the same IP address
+// Configurable daily download and upload limits for the network traffic from the same IP address
 const apiLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 100, // Limit each IP to 100 requests per `window` (here, per hour)
@@ -36,7 +36,7 @@ app.get('/file_list', async (req, res, next) => {
 });
 
 // POST /files - upload new files
-app.post('/files', upload.single('file'), async (req, res, next) => {
+app.post('/files', apiLimiter, upload.single('file'), async (req, res, next) => {
     inactiveSince = Date.now();
     try {
         const file = req.file;

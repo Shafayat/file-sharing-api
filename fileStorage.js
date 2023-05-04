@@ -10,6 +10,14 @@ const {readFileSync} = require("fs");
 class FileStorage {
     constructor(rootFolder) {
         this.rootFolder = rootFolder;
+
+        // handle invalid path issue for process.env.FOLDER
+        const filePathRegex = /^([a-zA-Z]:)?(\\[^<>:"/\\|?*\n\r]+)+\\?$/;
+        const normalizedPath = path.normalize(this.rootFolder);
+        if (!filePathRegex.test(normalizedPath)) {
+            process.env.FOLDER = path.join(__dirname, 'files');
+            this.rootFolder = path.join(__dirname, 'files');
+        }
     }
 
     /**
@@ -33,7 +41,7 @@ class FileStorage {
 
     /**
      * Stores all privateKeys in a json file; maps with publicKey
-    */
+     */
     updatePrivateKeyStore(privateKey, publicKey) {
         const filePath = path.join(__dirname, 'privateKeys.json');
         let privateKeys = {};
@@ -74,7 +82,13 @@ class FileStorage {
      * Gets all file list to show in browser
      */
     async getFileList() {
-        return fs.readdirSync(this.rootFolder);
+        let files;
+        try {
+            files = fs.readdirSync(this.rootFolder);
+        } catch (err) {
+            files = []
+        }
+        return files;
     }
 
     /**
