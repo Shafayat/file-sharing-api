@@ -11,16 +11,15 @@ const upload = multer();
 const fileStorage = new FileStorage(process.env.FOLDER);
 let inactiveSince = Date.now();
 
-// Configurable daily download and upload limits for the network traffic from the same IP address
+// Configurable daily request limits for the network traffic from the same IP address
 const apiLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 100, // Limit each IP to 100 create requests per `window` (here, per hour)
+    max: 100, // Limit each IP to 100 requests per `window` (here, per hour)
     message:
-        'Too many accounts created from this IP, please try again after an hour',
+        'Too many requests from this IP, please try again after an hour',
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
-
 
 // GET /files - list existing files
 app.get('/', async (req, res, next) => {
@@ -28,6 +27,7 @@ app.get('/', async (req, res, next) => {
     const publicFolder = path.join(__dirname, 'templates');
     res.sendFile(path.join(publicFolder, './file-list.html'));
 });
+
 // GET /files - list existing files
 app.get('/file_list', async (req, res, next) => {
     let list = await fileStorage.getFileList();
@@ -52,8 +52,9 @@ app.get('/files/:publicKey', apiLimiter, async (req, res, next) => {
     inactiveSince = Date.now();
     try {
         const publicKey = req.params.publicKey;
-        const fileStream = await fileStorage.getFileStream(publicKey);
         const filePath = path.join(process.env.FOLDER, publicKey);
+
+        const fileStream = await fileStorage.getFileStream(filePath);
         const mimeType = mimeTypes.lookup(filePath);
 
         res.setHeader('Content-disposition', `attachment; filename=${publicKey}`);
@@ -63,6 +64,7 @@ app.get('/files/:publicKey', apiLimiter, async (req, res, next) => {
         next(error);
     }
 });
+
 // GET /files - list existing files
 app.get('/upload', async (req, res, next) => {
     const publicFolder = path.join(__dirname, 'templates');
@@ -81,6 +83,7 @@ app.delete('/files/:privateKey', async (req, res, next) => {
         next(error);
     }
 });
+
 // GET /delete - the html page to input privateKey
 app.get('/delete', async (req, res, next) => {
     const publicFolder = path.join(__dirname, 'templates');
@@ -90,10 +93,9 @@ app.get('/delete', async (req, res, next) => {
 
 // Internal job to cleanup uploaded files after configurable period of inactivity
 setInterval(() => {
-    let deleteInterval = 1 * 60 * 1000 //delete files if inactive for 5min
+    let deleteInterval = process.env.FILE_EXPIRATION_TIME //delete files if inactive for FILE_EXPIRATION_TIME (ms)
     if ((Date.now() - inactiveSince) > deleteInterval) {
         console.log('Cleaning up inactive files');
-
         fs.readFile('privateKeys.json', 'utf8', (err, data) => {
             if (err) throw err;
             let jsonData = {};
@@ -103,13 +105,11 @@ setInterval(() => {
                 console.log(e);
             }
             Object.keys(jsonData).forEach(async privateKey => {
-                await fileStorage.deleteFile(privateKey);
+                await fileStorage.deleteFile(privateKey, false);
             });
         });
     }
-
-
-}, 60 * 60 * 1000); // run every 1 hr.
+}, 60 * 1000); // run every 1 min.
 
 // Error handling middleware
 app.use((err, req, res, next) => {

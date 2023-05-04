@@ -10,7 +10,6 @@ describe('API endpoints', () => {
                 .post('/files')
                 .attach('file', 'test/testfile.txt')
                 .end(function (err, res) {
-                    console.log(res.body.privateKey)
                     if (res.body.privateKey && res.body.publicKey) {
                         privateKey = res.body.privateKey;
                         publicKey = res.body.publicKey;
